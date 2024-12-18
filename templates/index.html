@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Filamentos</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Lista de Filamentos</h1>
+    <a href="/add" class="button">Agregar Nuevo Filamento</a>
+    <table>
+        <thead>
+            <tr>
+                <th>Marca</th>
+                <th>Color</th>
+                <th>Tipo</th>
+                <th>Código Único</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for filamento in filamentos %}
+            <tr>
+                <td>{{ filamento.marca }}</td>
+                <td>{{ filamento.color }}</td>
+                <td>{{ filamento.tipo }}</td>
+                <td>{{ filamento.codigo_unico }}</td>
+                <td>
+                    <a href="/edit/{{ filamento.id }}">Editar</a>
+                    <a href="/delete/{{ filamento.id }}" onclick="return confirm('¿Seguro que deseas eliminar este filamento?')">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

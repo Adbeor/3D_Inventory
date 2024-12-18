@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Filamento</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Editar Filamento</h1>
+    <form method="POST">
+        <label for="marca">Marca:</label>
+        <input type="text" id="marca" name="marca" value="{{ filamento.marca }}" required>
+        <label for="color">Color:</label>
+        <input type="text" id="color" name="color" value="{{ filamento.color }}" required>
+        <label for="tipo">Tipo:</label>
+        <input type="text" id="tipo" name="tipo" value="{{ filamento.tipo }}" required>
+        <button type="submit">Actualizar</button>
+    </form>
+    <a href="/">Volver a la lista</a>
+</body>
+</html>

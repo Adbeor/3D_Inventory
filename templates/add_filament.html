@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Añadir Nuevo Filamento</h1>
+<form method="POST">
+    <label>Nombre:</label>
+    <input type="text" name="nombre" required>
+    <label>Color:</label>
+    <input type="text" name="color" required>
+    <label>Material:</label>
+    <input type="text" name="material" required>
+    <label>Peso Inicial (g):</label>
+    <input type="number" name="peso_inicial" step="0.01" required>
+    <label>Peso Actual (g):</label>
+    <input type="number" name="peso_actual" step="0.01" required>
+    <label>Fecha de Compra:</label>
+    <input type="date" name="fecha_compra" required>
+    <label>Estado:</label>
+    <select name="estado" required>
+        <option value="nuevo">Nuevo</option>
+        <option value="en uso">En Uso</option>
+        <option value="agotado">Agotado</option>
+    </select>
+    <button type="submit">Añadir</button>
+</form>
+{% endblock %}
