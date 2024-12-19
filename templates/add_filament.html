@@ -2,24 +2,43 @@
 {% block content %}
 <h1>Añadir Nuevo Filamento</h1>
 <form method="POST">
-    <label>Nombre:</label>
-    <input type="text" name="nombre" required>
-    <label>Color:</label>
-    <input type="text" name="color" required>
-    <label>Material:</label>
-    <input type="text" name="material" required>
-    <label>Peso Inicial (g):</label>
-    <input type="number" name="peso_inicial" step="0.01" required>
+        <label for="marca">Marca:</label>
+        <select name="marca" required>
+            {% for marca in marcas %}
+            <option value="{{ marca.id }}">{{ marca.nombre }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <label for="tipo">Tipo:</label>
+        <select name="tipo" required>
+            {% for tipo in tipos %}
+            <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <label for="color">Color:</label>
+        <select name="color" required>
+            {% for color in colores %}
+            <option value="{{ color.id }}">{{ color.nombre }}</option>
+            {% endfor %}
+        </select>
+        <br>
+    <label>Peso Spool (g):</label>
+    <input type="number" name="peso_spool" step="1" required>
     <label>Peso Actual (g):</label>
-    <input type="number" name="peso_actual" step="0.01" required>
+    <input type="number" name="peso_actual" step="1" required>
     <label>Fecha de Compra:</label>
     <input type="date" name="fecha_compra" required>
     <label>Estado:</label>
     <select name="estado" required>
-        <option value="nuevo">Nuevo</option>
-        <option value="en uso">En Uso</option>
-        <option value="agotado">Agotado</option>
+        <option value="Nuevo">Nuevo</option>
+        <option value="En uso">Abierto</option>
+        <option value="Agotado">Agotado</option>
     </select>
-    <button type="submit">Añadir</button>
+        <input type="submit" value="Agregar Filamento">
 </form>
 {% endblock %}
+
+

@@ -1,41 +1,40 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filamentos de Impresión 3D</title>
+    <title>Inventario de Filamentos</title>
 </head>
 <body>
-    <h1>Filamentos Registrados</h1>
-    <a href="{{ url_for('add_filamento') }}">Agregar Nuevo Filamento</a>
+    <h1>Inventario de Filamentos</h1>
+    <a href="{{ url_for('add_filamento') }}">Agregar Filamento</a>
+    <br>
     <a href="{{ url_for('add_marca') }}">Agregar Marca</a>
+    <br>
     <a href="{{ url_for('add_tipo') }}">Agregar Tipo</a>
+    <br>
     <a href="{{ url_for('add_color') }}">Agregar Color</a>
-    <table>
-        <thead>
-            <tr>
-                <th>Código Único</th>
-                <th>Marca</th>
-                <th>Tipo</th>
-                <th>Color</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for filamento in filamentos %}
-            <tr>
-                <td>{{ filamento.codigo_unico }}</td>
-                <td>{{ filamento.marca.nombre }}</td>
-                <td>{{ filamento.tipo.nombre }}</td>
-                <td>{{ filamento.color.nombre }}</td>
-                <td>
-                    <a href="{{ url_for('edit_filamento', id=filamento.id) }}">Editar</a>
-                    <a href="{{ url_for('delete_filamento', id=filamento.id) }}">Eliminar</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <br>
+    <a href="{{ url_for('generate_qr_pdf') }}">Generar PDF con QRs</a>
+
+    <h2>Lista de Filamentos</h2>
+    <ul>
+        {% for filamento in filamentos %}
+              {% set dias_transcurridos = (fecha_hoy - filamento.fecha_apertura).days %}
+            <li>
+                {{ filamento.codigo_unico }} - 
+                {{ filamento.marca.nombre }} - 
+                {{ filamento.tipo.nombre }} - 
+                {{ filamento.peso_spool }} g - 
+                {{ filamento.peso_actual }} g - 
+                {{ filamento.peso_actual - filamento.peso_spool}} g - 
+                {{ filamento.fecha_apertura }} - 
+                {{ dias_transcurridos }} 
+                {{ filamento.estado }} - 
+                <span style="background-color: {{ filamento.color.hex_color }}; padding: 5px; color: white;">
+                    {{ filamento.color.nombre }}                </span>
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
