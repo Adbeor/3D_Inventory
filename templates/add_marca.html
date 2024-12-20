@@ -13,5 +13,11 @@
         <br>
         <input type="submit" value="Agregar Marca">
     </form>
+
+    <h2> Marcas: </h2>
+    {% for marca in marcas %}
+    <li> {{marca.nombre}} 
+
+    {% endfor %}
 </body>
 </html>

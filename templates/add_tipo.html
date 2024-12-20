@@ -13,5 +13,10 @@
         <br>
         <input type="submit" value="Agregar Tipo">
     </form>
+    <h2> Tipos: </h2>
+    {% for tipo in tipos %}
+    <li> {{tipo.nombre}} 
+
+    {% endfor %}
 </body>
 </html>

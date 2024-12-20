@@ -143,9 +143,11 @@ def edit_filamento(id):
     if not filamento:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        filamento.marca_id = request.form['marca']
-        filamento.tipo_id = request.form['tipo']
-        filamento.color_id = request.form['color']
+        filamento.estado = request.form['estado']
+        filamento.peso_actual = request.form['peso_actual']
+        filamento.peso_spool = request.form['peso_spool']
+        fecha_str = request.form['fecha_apertura']
+        filamento.fecha_apertura = datetime.strptime(fecha_str, '%Y-%m-%d').date()
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit.html', filamento=filamento, marcas=marcas, tipos=tipos, colores=colores)
@@ -160,23 +162,25 @@ def delete_filamento(id):
 
 @app.route('/add_marca', methods=['GET', 'POST'])
 def add_marca():
+    marcas = Marca.query.all()
     if request.method == 'POST':
         nombre = request.form['nombre']
         nueva_marca = Marca(nombre=nombre)
         db.session.add(nueva_marca)
         db.session.commit()
         return redirect(url_for('index'))
-    return render_template('add_marca.html')
+    return render_template('add_marca.html',marcas = marcas)
 
 @app.route('/add_tipo', methods=['GET', 'POST'])
 def add_tipo():
+    tipos = Tipo.query.all()
     if request.method == 'POST':
         nombre = request.form['nombre']
         nuevo_tipo = Tipo(nombre=nombre)
         db.session.add(nuevo_tipo)
         db.session.commit()
         return redirect(url_for('index'))
-    return render_template('add_tipo.html')
+    return render_template('add_tipo.html',tipos = tipos)
 
 @app.route('/add_color', methods=['GET', 'POST'])
 def add_color():

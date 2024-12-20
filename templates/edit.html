@@ -1,22 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Filamento</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <h1>Editar Filamento</h1>
-    <form method="POST">
-        <label for="marca">Marca:</label>
-        <input type="text" id="marca" name="marca" value="{{ filamento.marca }}" required>
-        <label for="color">Color:</label>
-        <input type="text" id="color" name="color" value="{{ filamento.color }}" required>
-        <label for="tipo">Tipo:</label>
-        <input type="text" id="tipo" name="tipo" value="{{ filamento.tipo }}" required>
-        <button type="submit">Actualizar</button>
-    </form>
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Editar Filamento</h1>
+
+                    
+<form method="POST">
+    <label>Codigo Unico</label>
+    <input type="text" name="codigo_unico" value="{{ filamento.codigo_unico }}" disabled>
+    <label>Marca</label>
+    <input type="text" name="marca" value="{{ filamento.marca.nombre }}" disabled>
+    <label>Tipo de filamento</label>
+    <input type="text" name="tipo" value="{{ filamento.tipo.nombre }}" disabled>
+    <label>Peso del Spool (g):</label>
+    <input type="number" name="peso_spool" step="1" value="{{filamento.peso_spool}}" required>
+    <label>Peso Actual (g):</label>
+    <input type="number" name="peso_actual" step="1" value="{{filamento.peso_actual}}" required>
+    <label>fecha_apertura:</label>
+    <input type="date" name="fecha_apertura" value="{{filamento.fecha_apertura}}">
+    <label>Estado:</label>
+    <select name="estado" required>
+      <option value="Nuevo" {% if filamento.estado == 'Nuevo' %}selected{% endif %}>Nuevo</option>
+      <option value="En uso" {% if filamento.estado == 'En uso' %}selected{% endif %}>En uso</option>
+      <option value="Agotado" {% if filamento.estado == 'Agotado' %}selected{% endif %}>Agotado</option>
+    </select>
+    <label>Color</label>
+    <input type="text" name="color_name" value="{{filamento.color.nombre}}" disabled>
+    <input type="color" name="color" value="{{filamento.color.hex_color}}" disabled>
+    <br>
+    <br>
+    <button type="submit">Actualizar</button>
+    <br>
+    <br>
     <a href="/">Volver a la lista</a>
-</body>
-</html>
+</form>
+{% endblock %}
+
+
