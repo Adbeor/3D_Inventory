@@ -2,29 +2,49 @@
 {% block content %}
 <h1>Añadir Nuevo Filamento</h1>
 <form method="POST">
-        <label for="marca">Marca:</label>
-        <select name="marca" required>
-            {% for marca in marcas %}
-            <option value="{{ marca.id }}">{{ marca.nombre }}</option>
-            {% endfor %}
-        </select>
-        <br>
+    <label for="marca">Marca:</label>
+    <div id="marca-options">
+        {% for marca in marcas %}
+        <div class="option-button">
+            <input type="radio" id="marca-{{ marca.id }}" name="marca" value="{{ marca.id }}" required>
+            <label for="marca-{{ marca.id }}" class="option-label">
+                {{ marca.nombre }}
+            </label>
+        </div>
+        {% endfor %}
+    </div>
+    <br>
 
-        <label for="tipo">Tipo:</label>
-        <select name="tipo" required>
-            {% for tipo in tipos %}
-            <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
-            {% endfor %}
-        </select>
-        <br>
+    <label for="tipo">Tipo:</label>
+    <div id="tipo-options">
+        {% for tipo in tipos %}
+        <div class="option-button">
+            <input type="radio" id="tipo-{{ tipo.id }}" name="tipo" value="{{ tipo.id }}" required>
+            <label for="tipo-{{ tipo.id }}" class="option-label">
+                {{ tipo.nombre }}
+            </label>
+        </div>
+        {% endfor %}
+    </div>
+    <br>
 
-        <label for="color">Color:</label>
-        <select name="color" required>
-            {% for color in colores %}
-            <option value="{{ color.id }}">{{ color.nombre }}</option>
-            {% endfor %}
-        </select>
-        <br>
+    <label for="color">Color:</label>
+    <div id="color-options">
+        {% for color in colores %}
+        <div class="color-option">
+            <input type="radio" id="color-{{ color.id }}" name="color" value="{{ color.id }}" required>
+            <label for="color-{{ color.id }}" class="color-button" style="background-color: {{ color.hex_color }}; 
+              {% if color.silk %}
+                  background: linear-gradient(45deg, {{ color.hex_color }} 30%, #fff 90%);
+                  box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+              {% endif %}">
+            </label>
+            <p>{{ color.nombre }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    <br>
+
     <label>Peso Spool (g):</label>
     <input type="number" name="peso_spool" step="1" required>
     <label>Peso Actual (g):</label>
@@ -32,13 +52,85 @@
     <label>Fecha de Compra:</label>
     <input type="date" name="fecha_compra" required>
     <label>Estado:</label>
-    <select name="estado" required>
-        <option value="Nuevo">Nuevo</option>
-        <option value="En uso">Abierto</option>
-        <option value="Agotado">Agotado</option>
-    </select>
-        <input type="submit" value="Agregar Filamento">
+    <div id="estado-options">
+        <div class="option-button">
+            <input type="radio" id="estado-nuevo" name="estado" value="Nuevo" required>
+            <label for="estado-nuevo" class="option-label">
+                Nuevo
+            </label>
+        </div>
+        <div class="option-button">
+            <input type="radio" id="estado-en-uso" name="estado" value="En uso" required>
+            <label for="estado-en-uso" class="option-label">
+                Abierto
+            </label>
+        </div>
+        <div class="option-button">
+            <input type="radio" id="estado-agotado" name="estado" value="Agotado" required>
+            <label for="estado-agotado" class="option-label">
+                Agotado
+            </label>
+        </div>
+    </div>
+
+    <input type="submit" value="Agregar Filamento">
 </form>
+
+<style>
+    #color-options, #marca-options, #tipo-options, #estado-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .color-option, .option-button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .color-button {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .option-label {
+        display: inline-block;
+        padding: 10px;
+        border: 2px solid #000;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .color-button:hover, .option-label:hover {
+        transform: scale(1.1);
+        border-color: #555;
+    }
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    input[type="radio"]:checked + .color-button {
+        border-color: #00f;
+        box-shadow: 0 0 5px #00f;
+    }
+
+    input[type="radio"]:checked + .option-label {
+        border-color: #00f;
+        box-shadow: 0 0 5px #00f;
+    }
+
+    p {
+        margin-top: 5px;
+        font-size: 14px;
+    }
+</style>
 {% endblock %}
-
-

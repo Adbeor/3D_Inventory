@@ -14,8 +14,73 @@
         <label for="hex_color">Selecciona un color:</label>
         <input type="color" id="hex_color" name="hex_color" required>
         <br>
+        <label for="silk">¿Es metálico (silk)?</label>
+        <input type="checkbox" id="silk" name="silk">
+        <br>
         <button type="submit">Agregar</button>
+
+    </form>
+    <h2> Colores: </h2>
+    <form>
+    <div id="color-options">
+        {% for color in colores %}
+        <div class="color-option">
+            <input type="radio" id="color-{{ color.id }}" name="color" value="{{ color.id }}" required>
+            <label for="color-{{ color.id }}" class="color-button" style="background-color: {{ color.hex_color }}; 
+              {% if color.silk %}
+                  background: linear-gradient(45deg, {{ color.hex_color }} 30%, #fff 90%);
+                  box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+              {% endif %}">
+            </label>
+            <p>{{ color.nombre }}</p>
+        </div>
+        {% endfor %}
+    </div>
     </form>
     <a href="{{ url_for('index') }}">Volver</a>
 </body>
+
+
+<style>
+    #color-options, #marca-options, #tipo-options, #estado-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .color-option, .option-button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .color-button {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .option-label {
+        display: inline-block;
+        padding: 10px;
+        border: 2px solid #000;
+        border-radius: 5px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+
+    input[type="radio"] {
+        display: none;
+    }
+
+
+    p {
+        margin-top: 5px;
+        font-size: 14px;
+    }
+</style>
 </html>

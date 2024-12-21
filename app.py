@@ -12,7 +12,6 @@ from datetime import datetime
 from sqlalchemy import Enum
 
 
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///filamentos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -33,6 +32,7 @@ class Color(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), unique=True, nullable=False)  # Nombre del color
     hex_color = db.Column(db.String(7), unique=True, nullable=False)  # Valor hexadecimal (ej. #FF5733)
+    silk = db.Column(db.Boolean,default = False)
 
 class Filamento(db.Model):
     __tablename__ = 'filamentos'
@@ -78,9 +78,9 @@ def add_filamento():
         fecha_str = request.form['fecha_compra']
         fecha_apertura = datetime.strptime(fecha_str, '%Y-%m-%d').date()  # Convierte a tipo date
         estado = request.form['estado']
-        
-        print(estado)
-        print(type(estado))
+        # silk = request.form['silk']
+        # print(silk)
+        # print(type(silk))
         codigo_unico = generar_codigo_unico()
         nuevo_filamento = Filamento(marca_id=marca_id, tipo_id=tipo_id, color_id=color_id, codigo_unico=codigo_unico,peso_spool=peso_spool,fecha_apertura =fecha_apertura, peso_actual = peso_actual,estado = estado)
         db.session.add(nuevo_filamento)
@@ -187,11 +187,15 @@ def add_color():
     if request.method == 'POST':
         nombre = request.form['nombre']  # El nombre del color
         hex_color = request.form['hex_color']  # El valor hexadecimal del color
-        nuevo_color = Color(nombre=nombre, hex_color=hex_color)
+        silk =( request.form['silk'] == "on")
+        print(type(silk))
+        print(silk)
+        nuevo_color = Color(nombre=nombre, hex_color=hex_color, silk = silk)
         db.session.add(nuevo_color)
         db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('add_color.html')
+        return redirect(url_for('add_color'))
+    colores = Color.query.all()
+    return render_template('add_color.html',colores = colores)
 
 if __name__ == '__main__':
     app.run(debug=True)

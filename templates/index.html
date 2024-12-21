@@ -59,7 +59,12 @@
                     <td>{{ filamento.fecha_apertura }}</td>
                     <td>{{ dias_transcurridos }}</td>
                     <td>{{ filamento.estado }}</td>
-                    <td style="background-color: {{ filamento.color.hex_color }}; color: white; padding: 5px;">
+                    <td style="color: white; padding: 5px; background: {{ filamento.color.hex_color }};
+                      {% if filamento.color.silk %}
+                      background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
+                      box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                      {% endif %}
+                      ">
                         {{ filamento.color.nombre }}
                     </td>
 <td>
