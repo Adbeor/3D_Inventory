@@ -1,93 +1,267 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario de Filamentos</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-    <h1>Inventario de Filamentos</h1>
-    <a href="{{ url_for('add_filamento') }}">Agregar Filamento</a>
-    <br>
-    <a href="{{ url_for('add_marca') }}">Agregar Marca</a>
-    <br>
-    <a href="{{ url_for('add_tipo') }}">Agregar Tipo</a>
-    <br>
-    <a href="{{ url_for('add_color') }}">Agregar Color</a>
-    <br>
-    <a href="{{ url_for('generate_qr_pdf') }}">Generar PDF con QRs</a>
 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario de Filamentos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #f4f4f9;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      background-color: #006A9F;
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar a {
+      margin: 0 15px;
+      padding: 10px 20px;
+      text-decoration: none;
+      color: white;
+      background-color: #006A9F;
+      border-radius: 5px;
+      text-align: center;
+      display: block;
+    }
+
+    .navbar a:hover {
+      background-color: #0056b3;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .floating-menu {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      z-index: 100;
+      display: none;
+    }
+
+    iframe {
+      width: 300px;
+      height: 200px;
+      border: none;
+    }
+
+    .job-button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .job-button:hover {
+      background-color: #218838;
+    }
+
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .navbar a {
+        margin: 5px 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      table,
+      th,
+      td {
+        font-size: 12px;
+        padding: 5px;
+      }
+
+      iframe {
+        width: 100%;
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Inventario de Filamentos</h1>
+
+  <!-- Barra de navegación -->
+  <div class="navbar">
+    <a href="{{ url_for('add_filamento') }}">Agregar Filamento</a>
+    <a href="{{ url_for('add_marca') }}">Agregar Marca</a>
+    <a href="{{ url_for('add_tipo') }}">Agregar Tipo</a>
+    <a href="{{ url_for('add_color') }}">Agregar Color</a>
+    <a href="{{ url_for('generate_qr_pdf') }}">Generar PDF con QRs</a>
+  </div>
+
+  <!-- Contenedor principal -->
+  <div class="container">
     <h2>Lista de Filamentos</h2>
     <table>
-        <thead>
-            <tr>
-                <th>Código Único</th>
-                <th>Marca</th>
-                <th>Tipo</th>
-                <th>Peso Spool</th>
-                <th>Peso Actual</th>
-                <th>Descuento Peso</th>
-                <th>Fecha de Apertura</th>
-                <th>Días Transcurridos</th>
-                <th>Estado</th>
-                <th>Color</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for filamento in filamentos %}
-                {% set dias_transcurridos = (fecha_hoy - filamento.fecha_apertura).days %}
-                
-                {# Convertir el color hexadecimal a valores RGB #RRGGBB #}
-                {% set hex_color = filamento.color.hex_color %}
-                {% set r = hex_color[1:3] | int(base=16) %}
-                {% set g = hex_color[3:5] | int(base=16) %}
-                {% set b = hex_color[5:7] | int(base=16) %}
-                
-                {# Calcular la luminancia del color de fondo #}
-                {% set luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b %}
+      <thead>
+        <tr>
+          <th>Código Único</th>
+          <th>Marca</th>
+          <th>Tipo</th>
+          <th>Peso Spool</th>
+          <th>Peso Actual</th>
+          <th>Descuento Peso</th>
+          <th>Fecha de Apertura</th>
+          <th>Días Transcurridos</th>
+          <th>Estado</th>
+          <th>Color</th>
+          <th>Acciones</th>
+          <th>Trabajos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for filamento in filamentos %}
+        {% set dias_transcurridos = (fecha_hoy - filamento.fecha_apertura).days %}
 
-                {# Establecer el color del texto según la luminancia del fondo #}
-                {% if luminance > 0.5 %}
-                    {% set text_color = 'black' %}
-                {% else %}
-                    {% set text_color = 'white' %}
-                {% endif %}
+        {# Convertir el color hexadecimal a valores RGB #RRGGBB #}
+        {% set hex_color = filamento.color.hex_color %}
+        {% set r = hex_color[1:3] | int(base=16) %}
+        {% set g = hex_color[3:5] | int(base=16) %}
+        {% set b = hex_color[5:7] | int(base=16) %}
 
-                <tr>
-                    <td>{{ filamento.codigo_unico }}</td>
-                    <td>{{ filamento.marca.nombre }}</td>
-                    <td>{{ filamento.tipo.nombre }}</td>
-                    <td>{{ filamento.peso_spool }} g</td>
-                    <td>{{ filamento.peso_actual }} g</td>
-                    <td>{{ filamento.peso_actual - filamento.peso_spool }} g</td>
-                    <td>{{ filamento.fecha_apertura }}</td>
-                    <td>{{ dias_transcurridos }}</td>
-                    <td>{{ filamento.estado }}</td>
-                    <td style="color: {{ text_color }}; padding: 5px; background: {{ filamento.color.hex_color }};
-                      {% if filamento.color.silk %}
-                      background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
-                      box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
-                      {% endif %}
-                      ">
-                        {{ filamento.color.nombre }}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('edit_filamento', id=filamento.id) }}">Editar</a> |
-                        <a href="{{ url_for('delete_filamento', id=filamento.id) }}" onclick="return confirm('¿Estás seguro de que quieres eliminar este filamento?');">Eliminar</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbo
+        {# Calcular la luminancia del color de fondo #}
+        {% set luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b %}
+
+        {# Establecer el color del texto según la luminancia del fondo #}
+        {% if luminance > 0.5 %}
+        {% set text_color = 'black' %}
+        {% else %}
+        {% set text_color = 'white' %}
+        {% endif %}
+
+        <tr>
+          <td>{{ filamento.codigo_unico }}</td>
+          <td>{{ filamento.marca.nombre }}</td>
+          <td>{{ filamento.tipo.nombre }}</td>
+          <td>{{ filamento.peso_spool }} g</td>
+          <td>{{ filamento.peso_actual }} g</td>
+          <td>{{ filamento.peso_actual - filamento.peso_spool }} g</td>
+          <td>{{ filamento.fecha_apertura }}</td>
+          <td>{{ dias_transcurridos }}</td>
+          <td>{{ filamento.estado }}</td>
+          <td style="color: {{ text_color }}; padding: 5px; background: {{ filamento.color.hex_color }};
+                        {% if filamento.color.silk %}
+                        background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
+                        box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                        {% endif %}
+                        ">
+            {{ filamento.color.nombre }}
+          </td>
+          <td>
+            <a href="{{ url_for('edit_filamento', id=filamento.id) }}">Editar</a> |
+            <a href="{{ url_for('delete_filamento', id=filamento.id) }}"
+              onclick="return confirm('¿Estás seguro de que quieres eliminar este filamento?');">Eliminar</a>
+          </td>
+
+          <td>
+            <button class="job-button" data-url="{{ url_for('test') }}">JOB</button>
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="floating-menu" id="floatingMenu">
+    <iframe id="floatingIframe" src=""></iframe>
+  </div>
+
+  <script>
+    const jobButtons = document.querySelectorAll('.job-button');
+    const floatingMenu = document.getElementById('floatingMenu');
+    const floatingIframe = document.getElementById('floatingIframe');
+    let currentButton = null;
+
+    jobButtons.forEach(button => {
+      button.addEventListener('click', (event) => {
+        const rect = button.getBoundingClientRect();
+        const url = button.getAttribute('data-url'); // Ruta específica para cada botón
+        floatingIframe.src = url; // Carga la página en el iframe
+
+        // Mostrar el menú temporalmente para obtener sus dimensiones
+        floatingMenu.style.display = 'block';
+
+        // Calcular la posición del menú flotante
+        let top = rect.bottom + window.scrollY;
+        let left = rect.left + window.scrollX;
+
+        // Verificar si el menú está a punto de salir por el lado derecho de la pantalla
+        if (left + floatingMenu.offsetWidth > window.innerWidth) {
+          left = window.innerWidth - floatingMenu.offsetWidth - 10; // Acomoda a la izquierda si es necesario
+        }
+
+        // Verificar si el menú está a punto de salir por la parte inferior de la pantalla
+        if (top + floatingMenu.offsetHeight > window.innerHeight) {
+          top = rect.top + window.scrollY - floatingMenu.offsetHeight - 10; // Acomoda hacia arriba si es necesario
+        }
+
+        // Posicionar el menú flotante
+        floatingMenu.style.top = `${top}px`;
+        floatingMenu.style.left = `${left}px`;
+
+        // Dejar el menú visible
+        floatingMenu.style.display = 'block';
+
+        currentButton = button;
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!floatingMenu.contains(event.target) && !Array.from(jobButtons).includes(event.target)) {
+        floatingMenu.style.display = 'none';
+        floatingIframe.src = ''; // Limpia el iframe al cerrar el menú
+        currentButton = null;
+      }
+    });
+  </script>
+</body>
+
+</html>

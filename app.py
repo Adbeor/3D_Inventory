@@ -1,12 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 import qrcode
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 import os
 import tempfile
-import shutil
 from datetime import date
 from datetime import datetime
 from sqlalchemy import Enum
@@ -245,6 +241,12 @@ def add_color():
         return redirect(url_for('add_color'))
     colores = Color.query.all()
     return render_template('add_color.html',colores = colores)
+
+@app.route('/test')
+def test():
+    filamentos = db.session.query(Filamento).all()
+    fecha_hoy = date.today()
+    return render_template('pruebas.html', filamentos=filamentos,fecha_hoy = fecha_hoy)
 
 if __name__ == '__main__':
     app.run(debug=True)
