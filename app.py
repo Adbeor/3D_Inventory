@@ -10,12 +10,18 @@ import shutil
 from datetime import date
 from datetime import datetime
 from sqlalchemy import Enum
-
+import cairo
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///filamentos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
 
 class Marca(db.Model):
     __tablename__ = 'marcas'
@@ -90,43 +96,83 @@ def add_filamento():
 
 @app.route('/generate_qr_pdf')
 def generate_qr_pdf():
-    # Crear PDF con códigos QR
+    # Crear PDF con Cairo
     filamentos = db.session.query(Filamento).all()
     file_path = "qrs_filamentos.pdf"
-    
-    c = canvas.Canvas(file_path, pagesize=letter)
-    y_position = 700  # Posición inicial para los QR
+    qr_size = 100  # Tamaño del QR (más pequeño)
+    # Configurar el tamaño de la página
+    width, height = 612, 792  # Tamaño carta (letter) en puntos (72 puntos por pulgada)
+    surface = cairo.PDFSurface(file_path, width, height)
+    ctx = cairo.Context(surface)
+
+    y_position = 20  # Posición inicial para los QR
 
     for filamento in filamentos:
         qr_data = filamento.codigo_unico
         qr_img = qrcode.make(qr_data)
 
-        print(int(filamento.codigo_unico[-1]))
+        # Determinar posición y salto según el código único
         if int(filamento.codigo_unico[-1]) % 2 == 0:
-            x_position = 350
-            salto = 120
+            x_position = 210
+            salto = 100
         else:
-            x_position = 100
+            x_position = 10
             salto = 0
-        
+
         # Guardar la imagen del QR en un archivo temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_qr_file:
             qr_img.save(temp_qr_file)
             temp_qr_file_path = temp_qr_file.name
 
-        # Insertar QR en el PDF
-        c.drawImage(temp_qr_file_path, x_position, y_position, width=100, height=100)
-        c.drawString(x_position + 10, y_position - 10, f"{filamento.codigo_unico} - {filamento.marca.nombre} - {filamento.color.nombre}")
-        y_position -= salto  # Mover hacia abajo para el siguiente QR
+# Cargar e insertar la imagen del QR en el PDF con tamaño reducido
+        qr_surface = cairo.ImageSurface.create_from_png(temp_qr_file_path)
+        qr_width = qr_surface.get_width()
+        qr_height = qr_surface.get_height()
 
-        if y_position < 100:
-            c.showPage()  # Crear una nueva página si se acaba el espacio
-            y_position = 700  # Restablecer la posición
+        # Escalar el QR para que tenga el tamaño deseado
+        scale_x = qr_size / qr_width
+        scale_y = qr_size / qr_height
+        ctx.save()  # Guardar el estado del contexto
+        ctx.translate(x_position, y_position)  # Mover a la posición deseada
+        ctx.scale(scale_x, scale_y)  # Escalar el QR
+        ctx.set_source_surface(qr_surface, 0, 0)
+        ctx.paint()
+        ctx.restore()  # Restaurar el estado original del contexto
+
+        # Dibujar texto
+        ctx.set_source_rgb(0, 0, 0)  # Color negro
+        ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        ctx.set_font_size(10)
+        ctx.move_to(x_position + 10, y_position + 100)
+        ctx.show_text(f"{filamento.codigo_unico} - {filamento.marca.nombre} - {filamento.color.nombre}")
+
+        hex_color = filamento.color.hex_color
+        rgb_color = hex_to_rgb(hex_color)
+        print("----------------")
+        print(rgb_color)
+
+        # Crear un rectángulo con degradado si silk es True
+        if filamento.color.silk:
+            gradient = cairo.LinearGradient(x_position + 60, y_position + 14.5, x_position + 75 + 71, y_position + 14.5 + 71)
+            gradient.add_color_stop_rgb(0.8,rgb_color[0]/255,rgb_color[1]/255,rgb_color[2]/255)  # Azul
+            gradient.add_color_stop_rgb(0, 1, 1, 1)  # Blanco
+            ctx.set_source(gradient)
+        else:
+            ctx.set_source_rgb(rgb_color[0]/255,rgb_color[1]/255,rgb_color[2]/255)  # Negro sólido
+
+        ctx.rectangle(x_position + 100, y_position + 14.5, 15, 71)
+        ctx.fill()
+
+        y_position += salto  # Mover hacia abajo para el siguiente QR
+
+        if y_position > 600:
+            surface.show_page()  # Crear una nueva página si se acaba el espacio
+            y_position = 20  # Restablecer la posición
 
         # Eliminar el archivo temporal después de usarlo
         os.remove(temp_qr_file_path)
 
-    c.save()
+    surface.finish()  # Finalizar el PDF
 
     return redirect(url_for('download_pdf', filename=file_path))
 
@@ -187,7 +233,10 @@ def add_color():
     if request.method == 'POST':
         nombre = request.form['nombre']  # El nombre del color
         hex_color = request.form['hex_color']  # El valor hexadecimal del color
-        silk =( request.form['silk'] == "on")
+        try:
+            silk =( request.form['silk'] == "on")
+        except:
+            silk = False
         print(type(silk))
         print(silk)
         nuevo_color = Color(nombre=nombre, hex_color=hex_color, silk = silk)
