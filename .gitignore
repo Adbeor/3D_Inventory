@@ -1,3 +1,5 @@
 venv/*
 instance/*
 qrs_filamentos.pdf
+__pycache__
+instance/filamentos.db
