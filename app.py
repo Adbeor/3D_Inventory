@@ -277,11 +277,33 @@ def job_filament(id):
         g_pieza = request.form["g_pieza"]
         n_piezas = request.form["n_piezas"]
         g_total = float(g_pieza) * float(n_piezas)
+        print("gramos total: ", g_total)
+        print("gramos finales: ", filamento.peso_actual - g_total)
+        if peso_neto - g_total >= 0:
+            filamento.peso_actual = filamento.peso_actual - g_total
+        peso_neto = filamento.peso_actual - filamento.peso_spool
+        if peso_neto == 0:
+            filamento.estado = "Agotado"
+        db.session.commit()
+        return redirect(url_for("index"))
+    return render_template("job.html", filamento=filamento)
+
+
+@app.route("/job_mini/<int:id>", methods=["GET", "POST"])
+def job_mini(id):
+    filamento = db.session.get(Filamento, id)
+    if not filamento:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        peso_neto = filamento.peso_actual - filamento.peso_spool
+        g_pieza = request.form["g_pieza"]
+        n_piezas = request.form["n_piezas"]
+        g_total = float(g_pieza) * float(n_piezas)
         if peso_neto - g_total > 0:
             filamento.peso_actual = filamento.peso_actual - g_total
         db.session.commit()
         return redirect(url_for("index"))
-    return render_template("job.html", filamento=filamento)
+    return render_template("job2.html", filamento=filamento)
 
 
 @app.route("/delete/<int:id>")

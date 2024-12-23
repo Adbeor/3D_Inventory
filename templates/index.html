@@ -201,7 +201,7 @@
           </td>
 
           <td>
-            <button class="job-button" data-url="{{ url_for('test') }}">JOB</button>
+            <button class="job-button" data-url="{{ url_for('job_filament',id = filamento.id) }}">JOB</button>
           </td>
         </tr>
         {% endfor %}
@@ -211,20 +211,37 @@
   </div>
 
   <div class="floating-menu" id="floatingMenu">
-    <iframe id="floatingIframe" src=""></iframe>
+
+    <form method="POST" id="job_window" style="
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+      ">
+
+      <!-- Gramos por pieza -->
+      <label>Gramos de Filamento por pieza:</label>
+      <input type="number" id="g_pieza" name="g_pieza" step="0.01" required>
+      <label>Piezas:</label>
+      <input type="number" id="n_piezas" name="n_piezas" step="1" required>
+
+      <button id="submit-button" type="submit">Ejecutar trabajo</button>
+    </form>
   </div>
 
   <script>
     const jobButtons = document.querySelectorAll('.job-button');
     const floatingMenu = document.getElementById('floatingMenu');
-    const floatingIframe = document.getElementById('floatingIframe');
+    const floatingform = document.getElementById('job_window');
     let currentButton = null;
 
     jobButtons.forEach(button => {
       button.addEventListener('click', (event) => {
         const rect = button.getBoundingClientRect();
         const url = button.getAttribute('data-url'); // Ruta específica para cada botón
-        floatingIframe.src = url; // Carga la página en el iframe
+        floatingform.action = url; // Carga la página en el iframe
 
         // Mostrar el menú temporalmente para obtener sus dimensiones
         floatingMenu.style.display = 'block';
@@ -257,7 +274,7 @@
     document.addEventListener('click', (event) => {
       if (!floatingMenu.contains(event.target) && !Array.from(jobButtons).includes(event.target)) {
         floatingMenu.style.display = 'none';
-        floatingIframe.src = ''; // Limpia el iframe al cerrar el menú
+        floatingform.action = ''; // Limpia el iframe al cerrar el menú
         currentButton = null;
       }
     });

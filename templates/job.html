@@ -1,189 +1,227 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Trabajo </h1>
-<form method="POST">
-  <label>Codigo Unico</label>
-  <input type="text" name="codigo_unico" value="{{ filamento.codigo_unico }}" disabled>
-  <label for="marca">Marca:</label>
-  <div id="marca-options">
-    <div class="option-button">
-      <input type="radio" id="marca-{{ filamento.marca.id }}" name="marca" value="{{ filamento.marca.id }}" checked>
-      <label for="marca-{{ filamento.marca.id }}" class="option-label">
-        {{ filamento.marca.nombre }}
-      </label>
+  <h1>Trabajo</h1>
+  <form method="POST">
+    <label>Código Único</label>
+    <input type="text" name="codigo_unico" value="{{ filamento.codigo_unico }}" disabled>
+
+  <!-- Marca -->
+    <label for="marca">Marca:</label>
+    <div id="marca-options">
+      <div class="option-button">
+        <input type="radio" id="marca-{{ filamento.marca.id }}" name="marca" value="{{ filamento.marca.id }}" checked>
+        <label for="marca-{{ filamento.marca.id }}" class="option-label">
+          {{ filamento.marca.nombre }}
+        </label>
+      </div>
     </div>
-  </div>
-  <br>
+    <br>
 
-  <label for="tipo">Tipo:</label>
-  <div id="tipo-options">
-    <div class="option-button">
-      <input type="radio" id="tipo-{{ filamento.tipo.id }}" name="tipo" value="{{ filamento.tipo.id }}" checked>
-      <label for="tipo-{{ filamento.tipo.id }}" class="option-label">
-        {{ filamento.tipo.nombre }}
-      </label>
+  <!-- Tipo -->
+    <label for="tipo">Tipo:</label>
+    <div id="tipo-options">
+      <div class="option-button">
+        <input type="radio" id="tipo-{{ filamento.tipo.id }}" name="tipo" value="{{ filamento.tipo.id }}" checked>
+        <label for="tipo-{{ filamento.tipo.id }}" class="option-label">
+          {{ filamento.tipo.nombre }}
+        </label>
+      </div>
     </div>
-  </div>
-  <br>
+    <br>
 
-  <label for="color">Color:</label>
-  <div id="color-options">
-    <div class="color-option">
-      <input type="radio" id="color-{{ filamento.color.id }}" name="color" value="{{ filamento.color.id }}" checked>
-      <label for="color-{{ filamento.color.id }}" class="color-button" style="background-color: {{ filamento.color.hex_color }};
-              {% if filamento.color.silk %}
-                  background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
-                  box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
-              {% endif %}">
-      </label>
-      <p>{{ filamento.color.nombre }}</p>
+  <!-- Color -->
+    <label for="color">Color:</label>
+    <div id="color-options">
+      <div class="color-option">
+        <input type="radio" id="color-{{ filamento.color.id }}" name="color" value="{{ filamento.color.id }}" checked>
+        <label for="color-{{ filamento.color.id }}" class="color-button" style="background-color: {{ filamento.color.hex_color }};
+                                                                                {% if filamento.color.silk %}
+                                                                                  background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
+                                                                                  box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                                                                                {% endif %}">
+        </label>
+        <p>{{ filamento.color.nombre }}</p>
+      </div>
     </div>
-  </div>
-  <br>
+    <br>
 
-  <label>Peso Spool (g):</label>
-  <input type="number" name="peso_spool" step="1" value="{{filamento.peso_spool}}" disabled>
-  <div style="display: flex; gap: 35%; justify-content: center;">
-    <div>
-      <label>Peso Actual (g):</label>
-      <input type="number" name="peso_actual" step="1" value="{{filamento.peso_actual}}" disabled>
+  <!-- Pesos -->
+    <label>Peso Spool (g):</label>
+    <input type="number" name="peso_spool" step="1" value="{{filamento.peso_spool}}" disabled>
+    <div style="display: flex; gap: 35%; justify-content: center;">
+      <div>
+        <label>Peso Actual (g):</label>
+        <input type="number" name="peso_actual" step="1" value="{{filamento.peso_actual}}" disabled>
+      </div>
+      <div>
+        <label>Peso Neto (g):</label>
+        <input type="number" name="peso_neto" value="{{filamento.peso_actual - filamento.peso_spool}}" disabled>
+      </div>
     </div>
-    <div>
-      <label>Peso Neto (g):</label>
-      <input type="number" name="peso_neto" value="{{filamento.peso_actual - filamento.peso_spool}}" disabled>
-    </div>
-  </div>
 
-  <label>Gramos de Filamento por pieza:</label>
-  <input type="number" name="g_pieza" step="0.01" required>
-  <label>Piezas:</label>
-  <input type="number" name="n_piezas" step="1" required>
-  <button type="submit">Ejecutar trabajo</button>
+  <!-- Gramos por pieza -->
+    <label>Gramos de Filamento por pieza:</label>
+    <input type="number" id="g_pieza" name="g_pieza" step="0.01" required>
+    <label>Piezas:</label>
+    <input type="number" id="n_piezas" name="n_piezas" step="1" required>
 
-</form>
+  <!-- Peso Nuevo -->
+    <label>Peso Nuevo (g):</label>
+    <input type="number" id="peso_nuevo" name="peso_nuevo" disabled>
+<!-- Mensaje de error -->
+    <p id="error-message" style="color: red; display: none;">No se puede realizar el trabajo porque se gasta más filamento del disponible.</p>
 
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    line-height: 1.6;
-    box-sizing: border-box;
-  }
+    <button id="submit-button" type="submit">Ejecutar trabajo</button>
+  </form>
 
-  h1 {
-    text-align: center;
-    margin: 20px 0;
-  }
 
-  form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
+  <script>
+  // Elementos
+    const pesoNetoInput = document.querySelector('input[name="peso_neto"]');
+    const gPiezaInput = document.getElementById('g_pieza');
+    const nPiezasInput = document.getElementById('n_piezas');
+    const pesoNuevoInput = document.getElementById('peso_nuevo');
+    const submitButton = document.getElementById('submit-button');
+    const errorMessage = document.getElementById('error-message');
 
-  label {
-    font-size: 14px;
-    margin-bottom: 5px;
-  }
+  // Función para actualizar el peso nuevo
+    function actualizarPesoNuevo() {
+      const pesoNeto = parseFloat(pesoNetoInput.value) || 0;
+      const gPieza = parseFloat(gPiezaInput.value) || 0;
+      const nPiezas = parseInt(nPiezasInput.value) || 0;
+      const pesoNuevo = pesoNeto - (gPieza * nPiezas);
 
-  input[type="text"],
-  input[type="number"],
-  input[type="date"] {
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: 100%;
-  }
+      pesoNuevoInput.value = pesoNuevo.toFixed(2); // Actualiza el campo de peso nuevo
 
-  input[type="submit"] {
-    padding: 10px;
-    font-size: 16px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
+    // Verifica si el peso nuevo es negativo
+      if (pesoNuevo < 0) {
+        submitButton.disabled = true; // Desactiva el botón de submit
+        errorMessage.style.display = 'block'; // Muestra el mensaje de error
+        submitButton.style.backgroundColor = "#555555";
+      } else {
+        submitButton.disabled = false; // Habilita el botón de submit
+        errorMessage.style.display = 'none'; // Oculta el mensaje de error
+        submitButton.style.backgroundColor = "";
+      }
+    }
 
-  input[type="submit"]:hover {
-    background-color: #0056b3;
-  }
+  // Eventos para recalcular cuando se cambien los valores
+    gPiezaInput.addEventListener('input', actualizarPesoNuevo);
+    nPiezasInput.addEventListener('input', actualizarPesoNuevo);
+  </script>
 
-  #color-options,
-  #marca-options,
-  #tipo-options,
-  #estado-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-  }
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      box-sizing: border-box;
+    }
 
-  .color-option,
-  .option-button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
 
-  .color-button {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    border: 2px solid #000;
-    border-radius: 50%;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
+    form {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
 
-  .option-label {
-    display: inline-block;
-    padding: 8px;
-    border: 2px solid #000;
-    border-radius: 5px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-  }
+    label {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
 
-  .color-button:hover,
-  .option-label:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] {
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
 
-  input[type="radio"] {
-    display: none;
-  }
+    input[type="submit"] {
+      padding: 10px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
 
-  input[type="radio"]:checked+.color-button {
-    border-color: #00f;
-    box-shadow: 0 0 5px #00f;
-  }
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
 
-  input[type="radio"]:checked+.option-label {
-    border-color: #00f;
-    box-shadow: 0 0 5px #00f;
-  }
+    #color-options,
+    #marca-options,
+    #tipo-options,
+    #estado-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
 
-  p {
-    margin-top: 5px;
-    font-size: 14px;
-  }
-</style>
+    .color-option,
+    .option-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .color-button {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 2px solid #000;
+      border-radius: 50%;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .option-label {
+      display: inline-block;
+      padding: 8px;
+      border: 2px solid #000;
+      border-radius: 5px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+
+    .color-button:hover,
+    .option-label:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    input[type="radio"] {
+      display: none;
+    }
+
+    input[type="radio"]:checked+.color-button {
+      border-color: #00f;
+      box-shadow: 0 0 5px #00f;
+    }
+
+    input[type="radio"]:checked+.option-label {
+      border-color: #00f;
+      box-shadow: 0 0 5px #00f;
+    }
+
+    p {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+  </style>
 {% endblock %}
-
-
-
-<form>
-  <label>Gramos de Filamento por pieza:</label>
-  <input type="number" name="peso_spool" step="1" required>
-  <label>Piezas:</label>
-  <input type="number" name="peso_actual" step="1" required>
-  <button type="submit">Ejecutar trabajo</button>
-</form>
