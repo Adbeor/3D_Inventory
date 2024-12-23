@@ -78,11 +78,6 @@
       display: none;
     }
 
-    iframe {
-      width: 300px;
-      height: 200px;
-      border: none;
-    }
 
     .job-button {
       background-color: #28a745;
@@ -121,7 +116,107 @@
         height: 250px;
       }
     }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      cursor: pointer;
+    }
+
+    th.sorted-asc::after {
+      content: " ↑";
+    }
+
+    th.sorted-desc::after {
+      content: " ↓";
+    }
+
+    /* Filtros */
+    .filter-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-form select,
+    .filter-form button {
+      padding: 5px;
+    }
   </style>
+
+  <script>
+    function applyFilters() {
+      const marcaFilter = document.getElementById("marca-filter").value.toLowerCase();
+      const estadoFilter = document.getElementById("estado-filter").value.toLowerCase();
+      const rows = document.querySelectorAll("#filamentos-body tr");
+
+      rows.forEach(row => {
+        const marca = row.getAttribute("data-marca").toLowerCase();
+        const estado = row.getAttribute("data-estado").toLowerCase();
+
+        const matchesMarca = marca.includes(marcaFilter);
+        const matchesEstado = estado.includes(estadoFilter);
+
+        if (matchesMarca && matchesEstado) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    function sortTable(columnIndex) {
+      const table = document.getElementById("filamentos-table");
+      const rows = Array.from(table.rows).slice(1); // Excluye la cabecera
+
+      const sortedRows = rows.sort((rowA, rowB) => {
+        const cellA = rowA.cells[columnIndex].innerText;
+        const cellB = rowB.cells[columnIndex].innerText;
+
+        if (isNaN(cellA) || isNaN(cellB)) {
+          return cellA.localeCompare(cellB); // Ordenar por texto
+        } else {
+          return parseFloat(cellA) - parseFloat(cellB); // Ordenar por números
+        }
+      });
+
+      const th = table.rows[0].cells[columnIndex];
+      const isAscending = th.classList.contains("sorted-asc");
+
+      // Alternar entre ascendente y descendente
+      if (isAscending) {
+        sortedRows.reverse();
+        th.classList.remove("sorted-asc");
+        th.classList.add("sorted-desc");
+      } else {
+        th.classList.remove("sorted-desc");
+        th.classList.add("sorted-asc");
+      }
+
+      // Reemplazar las filas en la tabla
+      const tbody = table.querySelector("tbody");
+      tbody.innerHTML = "";
+      sortedRows.forEach(row => tbody.appendChild(row));
+    }
+  </script>
 </head>
 
 <body>
@@ -136,27 +231,44 @@
     <a href="{{ url_for('generate_qr_pdf') }}">Generar PDF con QRs</a>
   </div>
 
+  <!-- Formulario de Filtrado -->
   <!-- Contenedor principal -->
   <div class="container">
     <h2>Lista de Filamentos</h2>
-    <table>
+  <div class="filter-form">
+    <select id="marca-filter">
+      <option value="">--Seleccionar Marca--</option>
+      {% for marca in marcas %}
+      <option value="{{ marca.id }}">{{ marca.nombre }}</option>
+      {% endfor %}
+    </select>
+    <select id="estado-filter">
+      <option value="">--Seleccionar Estado--</option>
+      <option value="Disponible">Disponible</option>
+      <option value="Agotado">Agotado</option>
+      <option value="En uso">En uso</option>
+    </select>
+    <button onclick="applyFilters()">Filtrar</button>
+  </div>
+    <table id="filamentos-table">
       <thead>
         <tr>
-          <th>Código Único</th>
-          <th>Marca</th>
-          <th>Tipo</th>
-          <th>Peso Spool</th>
-          <th>Peso Actual</th>
-          <th>Descuento Peso</th>
-          <th>Fecha de Apertura</th>
-          <th>Días Transcurridos</th>
-          <th>Estado</th>
-          <th>Color</th>
+
+          <th onclick="sortTable(0)">Código Único</th>
+          <th onclick="sortTable(1)">Marca</th>
+          <th onclick="sortTable(2)">Tipo</th>
+          <th onclick="sortTable(3)">Peso Spool</th>
+          <th onclick="sortTable(4)">Peso Actual</th>
+          <th onclick="sortTable(5)">Descuento Peso</th>
+          <th onclick="sortTable(6)">Fecha de Apertura</th>
+          <th onclick="sortTable(7)">Días Transcurridos</th>
+          <th onclick="sortTable(8)">Estado</th>
+          <th onclick="sortTable(9)">Color</th>
           <th>Acciones</th>
           <th>Trabajos</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="filamentos-body">
         {% for filamento in filamentos %}
         {% set dias_transcurridos = (fecha_hoy - filamento.fecha_apertura).days %}
 
@@ -176,7 +288,8 @@
         {% set text_color = 'white' %}
         {% endif %}
 
-        <tr>
+        <tr data-marca="{{ filamento.marca }}" data-estado="{{ filamento.estado }}">
+
           <td>{{ filamento.codigo_unico }}</td>
           <td>{{ filamento.marca.nombre }}</td>
           <td>{{ filamento.tipo.nombre }}</td>

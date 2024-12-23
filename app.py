@@ -113,8 +113,16 @@ def generar_codigo_unico():
 @app.route("/")
 def index():
     filamentos = db.session.query(Filamento).all()
+    marcas = Marca.query.all()
+    tipos = Tipo.query.all()
     fecha_hoy = date.today()
-    return render_template("index.html", filamentos=filamentos, fecha_hoy=fecha_hoy)
+    return render_template(
+        "index.html",
+        filamentos=filamentos,
+        fecha_hoy=fecha_hoy,
+        marcas=marcas,
+        tipos=tipos,
+    )
 
 
 @app.route("/add", methods=["GET", "POST"])
