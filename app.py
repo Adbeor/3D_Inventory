@@ -49,7 +49,7 @@ class Color(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), unique=True, nullable=False)  # Nombre del color
     hex_color = db.Column(
-        db.String(7), unique=True, nullable=False
+        db.String(7), unique=False, nullable=False
     )  # Valor hexadecimal (ej. #FF5733)
     silk = db.Column(db.Boolean, default=False)
 
@@ -98,6 +98,22 @@ class Filamento(db.Model):
         self.peso_actual = peso_actual
         self.fecha_apertura = fecha_apertura if fecha_apertura else date.today()
         self.estado = estado
+
+
+class Historial(db.Model):
+    __tablename__ = "historial"
+    id = db.Column(db.Integer, primary_key=True)
+    filamento_id = db.Column(db.Integer, db.ForeignKey("filamentos.id"), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    accion = db.Column(db.String(50), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
+
+    filamento = db.relationship("Filamento", backref="historial")
+
+    def __init__(self, filamento_id, accion, descripcion=None):
+        self.filamento_id = filamento_id
+        self.accion = accion
+        self.descripcion = descripcion
 
 
 with app.app_context():
@@ -153,6 +169,13 @@ def add_filamento():
             estado=estado,
         )
         db.session.add(nuevo_filamento)
+        db.session.commit()
+        nuevo_historial = Historial(
+            filamento_id=nuevo_filamento.id,
+            accion="Creación",
+            descripcion=f"Filamento creado con código único: {codigo_unico}",
+        )
+        db.session.add(nuevo_historial)
         db.session.commit()
         return redirect(url_for("index"))
     return render_template(
@@ -264,14 +287,57 @@ def edit_filamento(id):
     filamento = db.session.get(Filamento, id)
     if not filamento:
         return redirect(url_for("index"))
+
+    # Guardar los valores originales antes de la edición
+    valores_originales = {
+        "estado": filamento.estado,
+        "peso_actual": filamento.peso_actual,
+        "peso_spool": filamento.peso_spool,
+        "fecha_apertura": filamento.fecha_apertura,
+    }
+
     if request.method == "POST":
+        # Actualizar valores
         filamento.estado = request.form["estado"]
-        filamento.peso_actual = request.form["peso_actual"]
-        filamento.peso_spool = request.form["peso_spool"]
+        filamento.peso_actual = float(request.form["peso_actual"])
+        filamento.peso_spool = float(request.form["peso_spool"])
         fecha_str = request.form["fecha_apertura"]
         filamento.fecha_apertura = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+
+        # Generar la descripción de los cambios
+        descripcion_cambios = []
+        if valores_originales["estado"] != filamento.estado:
+            descripcion_cambios.append(
+                f"Estado: '{valores_originales['estado']}' → '{filamento.estado}'"
+            )
+        if valores_originales["peso_actual"] != filamento.peso_actual:
+            descripcion_cambios.append(
+                f"Peso actual: {valores_originales['peso_actual']}g → {filamento.peso_actual}g"
+            )
+        if valores_originales["peso_spool"] != filamento.peso_spool:
+            descripcion_cambios.append(
+                f"Peso del spool: {valores_originales['peso_spool']}g → {filamento.peso_spool}g"
+            )
+        if valores_originales["fecha_apertura"] != filamento.fecha_apertura:
+            descripcion_cambios.append(
+                f"Fecha de apertura: {valores_originales['fecha_apertura']} → {filamento.fecha_apertura}"
+            )
+
+        # Guardar cambios en la base de datos
         db.session.commit()
+
+        # Registrar en el historial
+        if descripcion_cambios:
+            nuevo_historial = Historial(
+                filamento_id=filamento.id,
+                accion="Edición",
+                descripcion="; ".join(descripcion_cambios),
+            )
+            db.session.add(nuevo_historial)
+            db.session.commit()
+
         return redirect(url_for("index"))
+
     return render_template("edit.html", filamento=filamento)
 
 
@@ -289,10 +355,17 @@ def job_filament(id):
         print("gramos finales: ", filamento.peso_actual - g_total)
         if peso_neto - g_total >= 0:
             filamento.peso_actual = filamento.peso_actual - g_total
-        peso_neto = filamento.peso_actual - filamento.peso_spool
-        if peso_neto == 0:
-            filamento.estado = "Agotado"
-        db.session.commit()
+            peso_neto = filamento.peso_actual - filamento.peso_spool
+            nuevo_historial = Historial(
+                filamento_id=filamento.id,
+                accion="Trabajo",
+                descripcion=f"{n_piezas} piezas de {g_pieza}g realizadas. Peso total: {g_total}g. Peso Neto: {peso_neto}",
+            )
+            db.session.add(nuevo_historial)
+            if peso_neto == 0:
+                filamento.estado = "Agotado"
+            db.session.commit()
+
         return redirect(url_for("index"))
     return render_template("job.html", filamento=filamento)
 
@@ -364,6 +437,27 @@ def add_color():
         return redirect(url_for("add_color"))
     colores = Color.query.all()
     return render_template("add_color.html", colores=colores)
+
+
+@app.route("/historial/<int:filamento_id>")
+def historial_filamento(filamento_id):
+    filamento = db.session.get(Filamento, filamento_id)
+    if not filamento:
+        return redirect(url_for("index"))
+    historial = (
+        Historial.query.filter_by(filamento_id=filamento_id)
+        .order_by(Historial.fecha.desc())
+        .all()
+    )
+    return render_template("historial.html", filamento=filamento, historial=historial)
+
+
+@app.route("/historial")
+def historial_general():
+    historial_general = db.session.query(Historial).join(Filamento).all()
+    return render_template(
+        "historial_general.html", historial_general=historial_general
+    )
 
 
 @app.route("/test")

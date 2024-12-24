@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial General</title>
+  <!-- Incluye DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .table-container {
+      margin: 20px auto;
+      max-width: 95%;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table {
+      width: 100%;
+    }
+    a {
+      display: block;
+      margin: 10px 0;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      background-color: #007BFF;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      max-width: 150px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    a:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Historial General</h1>
+  <div class="table-container">
+    <table id="historialGeneral" class="display responsive nowrap" style="width:100%">
+      <thead>
+        <tr>
+          <th>Filamento</th>
+          <th>Fecha</th>
+          <th>Acción</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for evento in historial_general %}
+        <tr>
+          <td>{{ evento.filamento.codigo_unico }}</td>
+          <td>{{ evento.fecha.strftime('%d/%m/%Y   %H:%M:%S') }}</td>
+          <td>{{ evento.accion }}</td>
+          <td>{{ evento.descripcion }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="{{ url_for('index') }}">Volver</a>
+
+  <!-- Incluye jQuery y DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#historialGeneral').DataTable({
+        responsive: true,
+        language: {
+          url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        }
+      });
+    });
+  </script>
+</body>
+</html>
