@@ -1,19 +1,20 @@
+from datetime import date
+from datetime import datetime
+import os
+import tempfile
+
+import cairo
 from flask import (
     Flask,
+    redirect,
     render_template,
     request,
-    redirect,
-    url_for,
     send_from_directory,
+    url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
 import qrcode
-import os
-import tempfile
-from datetime import date
-from datetime import datetime
 from sqlalchemy import Enum
-import cairo
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///filamentos.db"
@@ -195,18 +196,24 @@ def generate_qr_pdf():
     ctx = cairo.Context(surface)
 
     y_position = 20  # Posición inicial para los QR
-
+    contador_ternas = 0
     for filamento in filamentos:
         qr_data = filamento.codigo_unico
         qr_img = qrcode.make(qr_data)
 
         # Determinar posición y salto según el código único
-        if int(filamento.codigo_unico[-1]) % 2 == 0:
-            x_position = 210
-            salto = 100
-        else:
-            x_position = 10
+        if contador_ternas == 2:
+            x_position = 420
+            salto = 120
+            contador_ternas = 0
+        elif contador_ternas == 1:
+            x_position = 220
             salto = 0
+            contador_ternas += 1
+        else:
+            x_position = 20
+            salto = 0
+            contador_ternas += 1
 
         # Guardar la imagen del QR en un archivo temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_qr_file:
@@ -239,11 +246,12 @@ def generate_qr_pdf():
 
         hex_color = filamento.color.hex_color
         rgb_color = hex_to_rgb(hex_color)
-        print("----------------")
-        print(rgb_color)
 
-        # Crear un rectángulo con degradado si silk es True
+        # Dibujar rectángulo con relleno y borde
+        ctx.rectangle(x_position + 100, y_position + 14.5, 15, 71)
+
         if filamento.color.silk:
+            # Crear un degradado para el relleno
             gradient = cairo.LinearGradient(
                 x_position + 60,
                 y_position + 14.5,
@@ -256,16 +264,21 @@ def generate_qr_pdf():
             gradient.add_color_stop_rgb(0, 1, 1, 1)  # Blanco
             ctx.set_source(gradient)
         else:
+            # Usar un color sólido para el relleno
             ctx.set_source_rgb(
                 rgb_color[0] / 255, rgb_color[1] / 255, rgb_color[2] / 255
-            )  # Negro sólido
+            )
 
-        ctx.rectangle(x_position + 100, y_position + 14.5, 15, 71)
-        ctx.fill()
+        ctx.fill_preserve()  # Rellenar y preservar el camino del rectángulo
+
+        # Dibujar el borde negro
+        ctx.set_source_rgb(0, 0, 0)  # Negro
+        ctx.set_line_width(1)  # Grosor del borde
+        ctx.stroke()  # Dibujar el contorno
 
         y_position += salto  # Mover hacia abajo para el siguiente QR
 
-        if y_position > 600:
+        if y_position > 620:
             surface.show_page()  # Crear una nueva página si se acaba el espacio
             y_position = 20  # Restablecer la posición
 
@@ -273,7 +286,6 @@ def generate_qr_pdf():
         os.remove(temp_qr_file_path)
 
     surface.finish()  # Finalizar el PDF
-
     return redirect(url_for("download_pdf", filename=file_path))
 
 
