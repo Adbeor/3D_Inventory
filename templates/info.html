@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Filamento {{ filamento.codigo_unico }}</h1>
+
+<div class="form-container">
+  <form method="POST">
+    <label>Código Único</label>
+    <input type="text" name="codigo_unico" value="{{ filamento.codigo_unico }}" disabled>
+
+    <!-- Marca -->
+    <label for="marca">Marca:</label>
+    <div id="marca-options">
+      <div class="option-button">
+        <input type="radio" id="marca-{{ filamento.marca.id }}" name="marca" value="{{ filamento.marca.id }}" checked>
+        <label for="marca-{{ filamento.marca.id }}" class="option-label">
+          {{ filamento.marca.nombre }}
+        </label>
+      </div>
+    </div>
+    <br>
+
+    <!-- Tipo -->
+    <label for="tipo">Tipo:</label>
+    <div id="tipo-options">
+      <div class="option-button">
+        <input type="radio" id="tipo-{{ filamento.tipo.id }}" name="tipo" value="{{ filamento.tipo.id }}" checked>
+        <label for="tipo-{{ filamento.tipo.id }}" class="option-label">
+          {{ filamento.tipo.nombre }}
+        </label>
+      </div>
+    </div>
+    <br>
+
+    <!-- Color -->
+    <label for="color">Color:</label>
+    <div id="color-options">
+      <div class="color-option">
+        <input type="radio" id="color-{{ filamento.color.id }}" name="color" value="{{ filamento.color.id }}" checked>
+        <label for="color-{{ filamento.color.id }}" class="color-button" style="background-color: {{ filamento.color.hex_color }};
+                                                                                {% if filamento.color.silk %}
+                                                                                  background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
+                                                                                  box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                                                                                {% endif %}">
+        </label>
+        <p>{{ filamento.color.nombre }}</p>
+      </div>
+    </div>
+    <br>
+
+    <!-- Pesos -->
+    <label>Peso Spool (g):</label>
+    <input type="number" name="peso_spool" step="1" value="{{filamento.peso_spool}}" disabled>
+    <div style="display: flex; gap: 35%; justify-content: center;">
+      <div>
+        <label>Peso Actual (g):</label>
+        <input type="number" name="peso_actual" step="1" value="{{filamento.peso_actual}}" disabled>
+      </div>
+      <div>
+        <label>Peso Neto (g):</label>
+        <input type="number" name="peso_neto" value="{{filamento.peso_actual - filamento.peso_spool}}" disabled>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+<h1>Historial de {{ filamento.codigo_unico }}</h1>
+<div class="table-container">
+  <table id="historialTable" class="display responsive nowrap" style="width:100%">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Acción</th>
+        <th>Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for evento in historial %}
+      <tr>
+        <td>{{ evento.fecha.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+        <td>{{ evento.accion }}</td>
+        <td>{{ evento.descripcion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<a href="{{ url_for('index') }}">Volver</a>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#historialTable').DataTable({
+      responsive: true,
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+  });
+</script>
+
+  <script>
+  // Elementos
+    const pesoNetoInput = document.querySelector('input[name="peso_neto"]');
+    const gPiezaInput = document.getElementById('g_pieza');
+    const nPiezasInput = document.getElementById('n_piezas');
+    const pesoNuevoInput = document.getElementById('peso_nuevo');
+    const submitButton = document.getElementById('submit-button');
+    const errorMessage = document.getElementById('error-message');
+
+  // Función para actualizar el peso nuevo
+    function actualizarPesoNuevo() {
+      const pesoNeto = parseFloat(pesoNetoInput.value) || 0;
+      const gPieza = parseFloat(gPiezaInput.value) || 0;
+      const nPiezas = parseInt(nPiezasInput.value) || 0;
+      const pesoNuevo = pesoNeto - (gPieza * nPiezas);
+
+      pesoNuevoInput.value = pesoNuevo.toFixed(2); // Actualiza el campo de peso nuevo
+
+    // Verifica si el peso nuevo es negativo
+      if (pesoNuevo < 0) {
+        submitButton.disabled = true; // Desactiva el botón de submit
+        errorMessage.style.display = 'block'; // Muestra el mensaje de error
+        submitButton.style.backgroundColor = "#555555";
+      } else {
+        submitButton.disabled = false; // Habilita el botón de submit
+        errorMessage.style.display = 'none'; // Oculta el mensaje de error
+        submitButton.style.backgroundColor = "";
+      }
+    }
+
+  // Eventos para recalcular cuando se cambien los valores
+    gPiezaInput.addEventListener('input', actualizarPesoNuevo);
+    nPiezasInput.addEventListener('input', actualizarPesoNuevo);
+  </script>
+
+{% endblock %}

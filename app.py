@@ -1,8 +1,8 @@
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 import os
 import tempfile
-
+import random
+import re
 import cairo
 from flask import (
     Flask,
@@ -11,20 +11,21 @@ from flask import (
     request,
     send_from_directory,
     url_for,
+    jsonify,
 )
 from flask_sqlalchemy import SQLAlchemy
 import qrcode
-from sqlalchemy import Enum
+from sqlalchemy import Enum, not_
+
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///filamentos.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-
-def hex_to_rgb(hex_color):
-    hex_color = hex_color.lstrip("#")
-    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+UPLOAD_FOLDER = "/tmp/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
 class Marca(db.Model):
@@ -184,10 +185,34 @@ def add_filamento():
     )
 
 
+@app.route("/select_qr", methods=["GET", "POST"])
+def select_qr():
+    filamentos = db.session.query(Filamento).all()
+    marcas = Marca.query.all()
+    tipos = Tipo.query.all()
+    fecha_hoy = date.today()
+    if request.method == "POST":
+        seleccionados = request.form.getlist("filamentos")
+        return redirect(url_for("generate_qr_pdf", ids=",".join(seleccionados)))
+    return render_template(
+        "select_qr.html",
+        filamentos=filamentos,
+        marcas=marcas,
+        tipos=tipos,
+        fecha_hoy=fecha_hoy,
+    )
+
+
 @app.route("/generate_qr_pdf")
 def generate_qr_pdf():
-    # Crear PDF con Cairo
-    filamentos = db.session.query(Filamento).all()
+    ids = request.args.get("ids", "")
+    if not ids:
+        return "No seleccionaste ningún filamento.", 400
+
+    ids_seleccionados = [int(id) for id in ids.split(",")]
+    filamentos = (
+        db.session.query(Filamento).filter(Filamento.id.in_(ids_seleccionados)).all()
+    )
     file_path = "qrs_filamentos.pdf"
     qr_size = 100  # Tamaño del QR (más pequeño)
     # Configurar el tamaño de la página
@@ -244,12 +269,16 @@ def generate_qr_pdf():
             f"{filamento.codigo_unico} - {filamento.marca.nombre} - {filamento.color.nombre}"
         )
 
+        ctx.move_to(x_position + 10, y_position + 110)
+        ctx.show_text(f"{filamento.tipo.nombre}")
+
         hex_color = filamento.color.hex_color
         rgb_color = hex_to_rgb(hex_color)
 
         # Dibujar rectángulo con relleno y borde
         ctx.rectangle(x_position + 100, y_position + 14.5, 15, 71)
-
+        col = [rgb_color[0] / 255, rgb_color[1] / 255, rgb_color[2] / 255]
+        ctx.set_source_rgb(col[0], col[1], col[2])
         if filamento.color.silk:
             # Crear un degradado para el relleno
             gradient = cairo.LinearGradient(
@@ -262,19 +291,29 @@ def generate_qr_pdf():
                 0.8, rgb_color[0] / 255, rgb_color[1] / 255, rgb_color[2] / 255
             )  # Azul
             gradient.add_color_stop_rgb(0, 1, 1, 1)  # Blanco
-            ctx.set_source(gradient)
-        else:
-            # Usar un color sólido para el relleno
-            ctx.set_source_rgb(
-                rgb_color[0] / 255, rgb_color[1] / 255, rgb_color[2] / 255
-            )
+
+            col = gradient
+            ctx.set_source(col)
 
         ctx.fill_preserve()  # Rellenar y preservar el camino del rectángulo
 
-        # Dibujar el borde negro
+        # Dibujar el borde negro del rectángulo
         ctx.set_source_rgb(0, 0, 0)  # Negro
         ctx.set_line_width(1)  # Grosor del borde
         ctx.stroke()  # Dibujar el contorno
+
+        # Dibujar puntos negros aleatorios dentro del rectángulo
+        if filamento.color.nombre == "Marbel White":
+            num_points = random.randint(3, 5)  # Número de puntos aleatorios
+            for _ in range(num_points):
+                # Generar coordenadas aleatorias dentro del rectángulo
+                point_x = random.uniform(x_position + 105, x_position + 100 + 10)
+                point_y = random.uniform(y_position + 18.5, y_position + 14.5 + 65)
+
+                # Dibujar un punto negro
+                ctx.set_source_rgb(0, 0, 0)  # Color negro
+                ctx.arc(point_x, point_y, 2, 0, 3 * 3.14159)  # Radio del punto = 1
+                ctx.fill()
 
         y_position += salto  # Mover hacia abajo para el siguiente QR
 
@@ -464,6 +503,19 @@ def historial_filamento(filamento_id):
     return render_template("historial.html", filamento=filamento, historial=historial)
 
 
+@app.route("/filamento/<int:filamento_id>")
+def info_filamento(filamento_id):
+    filamento = db.session.get(Filamento, filamento_id)
+    if not filamento:
+        return redirect(url_for("index"))
+    historial = (
+        Historial.query.filter_by(filamento_id=filamento_id)
+        .order_by(Historial.fecha.desc())
+        .all()
+    )
+    return render_template("info.html", filamento=filamento, historial=historial)
+
+
 @app.route("/historial")
 def historial_general():
     historial_general = db.session.query(Historial).join(Filamento).all()
@@ -472,11 +524,127 @@ def historial_general():
     )
 
 
-@app.route("/test")
-def test():
-    filamentos = db.session.query(Filamento).all()
-    fecha_hoy = date.today()
-    return render_template("pruebas.html", filamentos=filamentos, fecha_hoy=fecha_hoy)
+@app.route("/upload", methods=["POST"])
+def upload_gcode():
+
+    file = request.files["file"]
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided"}), 400
+    file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+    file.save(file_path)
+
+    try:
+        data_extracted = parse_gcode(file_path)
+
+        # Asumiendo que el ID de la marca se envía en el formulario
+        marca_id = int(request.form.get("marca", 0))
+        color_id = int(request.form.get("color", 0))
+
+        filamentos = (
+            db.session.query(Filamento)
+            .filter(Filamento.marca_id == marca_id)
+            .filter(Filamento.color_id == color_id)
+            .filter(not_(Filamento.estado == "Agotado"))
+            .all()
+        )
+
+        for filamento in filamentos:
+            print(filamento.estado)
+            print(type(filamento.estado))
+        fecha_hoy = date.today()
+        return render_template(
+            "results.html",
+            data=data_extracted,
+            filamentos=filamentos,
+            fecha_hoy=fecha_hoy,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/proyecto")
+def proyect():
+    marcas = Marca.query.all()
+    tipos = Tipo.query.all()
+    colores = Color.query.all()
+    return render_template("proyect.html", marcas=marcas, tipos=tipos, colores=colores)
+
+
+def parse_gcode(file_path):
+    # Datos que queremos extraer
+    data = {
+        "Filament Type": "",
+        "Print Time": None,
+        "Filament Length (mm)": None,
+        "Filament Volume (cm³)": None,
+        "Filament Weight (g)": None,
+        "Thumbnail": "",
+    }
+
+    try:
+        with open(file_path, "r") as file:
+            lines = file.readlines()
+
+        inside_block = False
+        current_block = []
+
+        for line in lines:
+            line = line.strip()
+
+            # Extracción del thumbnail
+            if "thumbnail begin" in line:
+                inside_block = True
+                current_block = []
+            elif "thumbnail end" in line:
+                inside_block = False
+                data["Thumbnail"] = (
+                    "".join(current_block)
+                    .replace("\n", "")
+                    .replace(";", "")
+                    .replace(" ", "")
+                )
+            elif inside_block:
+                current_block.append(line.strip())
+
+            # Tipo de filamento
+            if "filament" in line.lower() and "pla" in line.lower():
+                data["Filament Type"] = "PLA"
+            elif "filament" in line.lower() and "petg" in line.lower():
+                data["Filament Type"] = "PETG"
+
+            # Tiempo de impresión
+            if "estimated printing time" in line.lower():
+                match = re.search(r"(\d+h \d+m \d+s)", line)
+                if match:
+                    data["Print Time"] = match.group()
+
+            # Longitud utilizada del filamento
+            if "filament used [mm]" in line.lower():
+                match = re.search(r"[\d.]+", line)
+                if match:
+                    data["Filament Length (mm)"] = float(match.group())
+
+            # Volumen utilizado del filamento
+            if "filament used [cm3]" in line.lower():
+                match = re.search(r"[\d.]+", line)
+                if match:
+                    data["Filament Volume (cm³)"] = float(match.group())
+
+            # Peso del filamento utilizado
+            if "filament used [g]" in line.lower():
+                match = re.search(r"[\d.]+", line)
+                if match:
+                    data["Filament Weight (g)"] = float(match.group())
+
+        return data
+
+    except Exception as e:
+        raise Exception(f"Error parsing G-code: {e}")
+
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
 
 if __name__ == "__main__":

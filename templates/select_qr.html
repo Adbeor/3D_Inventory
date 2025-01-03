@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seleccionar Filamentos</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #f4f4f9;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      background-color: #006A9F;
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar a {
+      margin: 0 15px;
+      padding: 10px 20px;
+      text-decoration: none;
+      color: white;
+      background-color: #006A9F;
+      border-radius: 5px;
+      text-align: center;
+      display: block;
+    }
+
+    .navbar a:hover {
+      background-color: #0056b3;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .floating-menu {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      z-index: 100;
+      display: none;
+    }
+
+
+    .job-button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .job-button:hover {
+      background-color: #218838;
+    }
+
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .navbar a {
+        margin: 5px 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      table,
+      th,
+      td {
+        font-size: 12px;
+        padding: 5px;
+      }
+
+      iframe {
+        width: 100%;
+        height: 250px;
+      }
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      cursor: pointer;
+    }
+
+    th.sorted-asc::after {
+      content: " ↑";
+    }
+
+    th.sorted-desc::after {
+      content: " ↓";
+    }
+
+    /* Filtros */
+    .filter-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-form select,
+    .filter-form button {
+      padding: 5px;
+    }
+
+    button[type="submit"] {
+        padding: 10px;
+        font-size: 16px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+  </style>
+
+  <script>
+    function applyFilters() {
+      const marcaFilter = document.getElementById("marca-filter").value.toLowerCase();
+      const estadoFilter = document.getElementById("estado-filter").value.toLowerCase();
+      const rows = document.querySelectorAll("#filamentos-body tr");
+
+      rows.forEach(row => {
+        const marca = row.getAttribute("data-marca").toLowerCase();
+        const estado = row.getAttribute("data-estado").toLowerCase();
+
+        const matchesMarca = marca.includes(marcaFilter);
+        const matchesEstado = estado.includes(estadoFilter);
+
+        if (matchesMarca && matchesEstado) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    function sortTable(columnIndex) {
+      const table = document.getElementById("filamentos-table");
+      const rows = Array.from(table.rows).slice(1); // Excluye la cabecera
+
+      const sortedRows = rows.sort((rowA, rowB) => {
+        const cellA = rowA.cells[columnIndex].innerText;
+        const cellB = rowB.cells[columnIndex].innerText;
+
+        if (isNaN(cellA) || isNaN(cellB)) {
+          return cellA.localeCompare(cellB); // Ordenar por texto
+        } else {
+          return parseFloat(cellA) - parseFloat(cellB); // Ordenar por números
+        }
+      });
+
+      const th = table.rows[0].cells[columnIndex];
+      const isAscending = th.classList.contains("sorted-asc");
+
+      // Alternar entre ascendente y descendente
+      if (isAscending) {
+        sortedRows.reverse();
+        th.classList.remove("sorted-asc");
+        th.classList.add("sorted-desc");
+      } else {
+        th.classList.remove("sorted-desc");
+        th.classList.add("sorted-asc");
+      }
+
+      // Reemplazar las filas en la tabla
+      const tbody = table.querySelector("tbody");
+      tbody.innerHTML = "";
+      sortedRows.forEach(row => tbody.appendChild(row));
+    }
+  </script>
+</head>
+
+<body>
+
+  <h1>Seleccionar Filamentos para Generar QR</h1>
+  <!-- Barra de navegación -->
+  <div class="navbar">
+    <a href="{{ url_for('index') }}">Lista de filamentos</a>
+    <a href="{{ url_for('add_filamento') }}">Agregar Filamento</a>
+    <a href="{{ url_for('add_marca') }}">Agregar Marca</a>
+    <a href="{{ url_for('add_tipo') }}">Agregar Tipo</a>
+    <a href="{{ url_for('add_color') }}">Agregar Color</a>
+    <a href="{{ url_for('generate_qr_pdf') }}">Generar PDF con QRs</a>
+  </div>
+
+  <div class="container">
+    <div class="filter-form">
+      <select id="marca-filter">
+        <option value="">--Seleccionar Marca--</option>
+        {% for marca in marcas %}
+        <option value="{{ marca.id }}">{{ marca.nombre }}</option>
+        {% endfor %}
+      </select>
+      <select id="estado-filter">
+        <option value="">--Seleccionar Estado--</option>
+        <option value="Nuevo">Disponible</option>
+        <option value="Agotado">Agotado</option>
+        <option value="En uso">En uso</option>
+      </select>
+      <button onclick="applyFilters()">Filtrar</button>
+    </div>
+    <form method="POST">
+
+      <table id="filamentos-table">
+        <thead>
+          <tr>
+
+            <th>Selección</th>
+            <th onclick="sortTable(1)">Código Único</th>
+            <th onclick="sortTable(2)">Marca</th>
+            <th onclick="sortTable(3)">Tipo</th>
+            <th onclick="sortTable(4)">Peso Spool</th>
+            <th onclick="sortTable(5)">Peso Actual</th>
+            <th onclick="sortTable(6)">Descuento Peso</th>
+            <th onclick="sortTable(7)">Fecha de Apertura</th>
+            <th onclick="sortTable(8)">Días Transcurridos</th>
+            <th onclick="sortTable(9)">Estado</th>
+            <th onclick="sortTable(10)">Color</th>
+          </tr>
+        </thead>
+        <tbody id="filamentos-body">
+          {% for filamento in filamentos %}
+          {% set dias_transcurridos = (fecha_hoy - filamento.fecha_apertura).days %}
+
+          {# Convertir el color hexadecimal a valores RGB #RRGGBB #}
+          {% set hex_color = filamento.color.hex_color %}
+          {% set r = hex_color[1:3] | int(base=16) %}
+          {% set g = hex_color[3:5] | int(base=16) %}
+          {% set b = hex_color[5:7] | int(base=16) %}
+
+          {# Calcular la luminancia del color de fondo #}
+          {% set luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b %}
+
+          {# Establecer el color del texto según la luminancia del fondo #}
+          {% if luminance > 0.5 %}
+          {% set text_color = 'black' %}
+          {% else %}
+          {% set text_color = 'white' %}
+          {% endif %}
+
+          <tr data-marca="{{ filamento.marca }}" data-estado="{{ filamento.estado }}">
+
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}><input
+                type="checkbox" name="filamentos" value="{{ filamento.id }}"> </td>
+
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.codigo_unico }}</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.marca.nombre }}</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.tipo.nombre }}</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.peso_spool }} g</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.peso_actual }} g</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.peso_actual - filamento.peso_spool }} g</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              filamento.fecha_apertura }}</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{
+              dias_transcurridos }}</td>
+            <td {% if filamento.estado=="Agotado" %} style="background-color:#BBBBBB;;" {% endif %}>{{ filamento.estado
+              }}</td>
+            <td style="color: {{ text_color }}; padding: 5px; background: {{ filamento.color.hex_color }};
+                        {% if filamento.color.silk %}
+                        background: linear-gradient(45deg, {{ filamento.color.hex_color }} 30%, #fff 90%);
+                        box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                        {% endif %}
+                        ">
+              {{ filamento.color.nombre }}
+            </td>
+          </tr>
+          {% endfor %}
+
+        </tbody>
+      </table>
+  <button type="submit">Generar QR</button>
+  </div>
+
+  </form>
+</body>
+
+</html>

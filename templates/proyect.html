@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="form-container">
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <div id="marca-options">
+        {% for marca in marcas %}
+          <div class="option-button">
+            <input type="radio" id="marca-{{ marca.id }}" name="marca" value="{{ marca.id }}" required>
+            <label for="marca-{{ marca.id }}" class="option-label">
+              {{ marca.nombre }}
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+      <br>
+
+      <label for="tipo">Tipo:</label>
+      <div id="tipo-options">
+        {% for tipo in tipos %}
+          <div class="option-button">
+            <input type="radio" id="tipo-{{ tipo.id }}" name="tipo" value="{{ tipo.id }}" required>
+            <label for="tipo-{{ tipo.id }}" class="option-label">
+              {{ tipo.nombre }}
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+      <br>
+      <label for="color">Color:</label>
+      <div id="color-options">
+        {% for color in colores %}
+          <div class="color-option">
+            <input type="radio" id="color-{{ color.id }}" name="color" value="{{ color.id }}" required>
+            <label for="color-{{ color.id }}" class="color-button" style="background-color: {{ color.hex_color }};
+                                                                          {% if color.silk %}
+                                                                            background: linear-gradient(45deg, {{ color.hex_color }} 30%, #fff 90%);
+                                                                            box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5);
+                                                                          {% endif %}">
+            </label>
+            <p>{{ color.nombre }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <label for="file">Choose G-code file:</label>
+      <input type="file" id="file" name="file" accept=".gcode" required>
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+{% endblock %}
